@@ -19,7 +19,7 @@ data "azuread_service_principal" "msgraph_profile_mod" {
 }
 
 data "azuread_user" "kv_admin" {
-  user_principal_name = "dan.thomas_3cloudsolutions.com#EXT#@infra3cloudoutlook.onmicrosoft.com"
+  user_principal_name = "user@<tenant-domain>.onmicrosoft.com"
   provider            = azuread.workforce
 }
 
