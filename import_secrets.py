@@ -3,9 +3,9 @@ import subprocess
 # List of secrets to import
 secrets_to_import = [
     {
-        "vault_name": "kv-<DEMO-NAME>-dev-demo",
+        "vault_name": "kv-<demo-name>-dev-demo",
         "secret_name": "backup-sas-token",
-        "version": "11111111111111111111111"
+        "version": "*****************************"
     },
     # Add more secrets here
     # {"vault_name": "your-vault", "secret_name": "your-secret", "version": "optional-version"},

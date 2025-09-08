@@ -28,7 +28,7 @@ resource "azurerm_role_assignment" "webapp_kv_access_admin" {
 resource "azurerm_role_assignment" "webapp_kv_access_admin2" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Administrator"
-  principal_id         = "11111111-1111-1111-1111-111111111111"
+  principal_id         = "11111111-1111-1111-1111-111111111111" # Replace with actual Object ID of the application registration not client ID
   depends_on           = [azurerm_key_vault.main]
 }
 
@@ -42,7 +42,7 @@ resource "azurerm_role_assignment" "webapp_kv_access_owner" {
 resource "azurerm_role_assignment" "webapp_kv_access_owner2" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Owner"
-  principal_id         = "11111111-1111-1111-1111-111111111111"
+  principal_id         = "11111111-1111-1111-1111-111111111111" # Replace with actual Object ID of the application registration not client ID
   depends_on           = [azurerm_key_vault.main]
 }
 
