@@ -124,7 +124,9 @@ After apply, inspect the `output.tf` values for app IDs, consent URLs, SAML info
 ## Post-deploy steps
 - **APIM**: replace the Petstore OpenAPI with your API, add JWT validation policies against CIAM, and configure per-API settings.
 - **SAML (Bank)**: set **Entity ID** and **Reply URL** in the Enterprise App to match the WebApp5 URLs from outputs.
-- **Authorize API(s)**: in CIAM, authorize the Primary app, UserProfile app and the Application app(s) for GraphAPI Permissions.  **Note**: The permissions are added in Terraform but still require admin consent.  **IMPORTANT**: Use both URLS from outputs to complete this step and modify the scopes as needed.
+- **Authorize API(s)**: in CIAM, authorize the Primary app, UserProfile app and the Application app(s) for GraphAPI Permissions.  
+  - **Note**: The permissions are added in Terraform but still require admin consent.  
+  - **IMPORTANT**: Use both URLS from outputs to complete this step and modify the scopes as needed.
 - **User flows (CIAM)**: create sign-up/sign-in and profile manually and add the created Applications to it.  
   - **FUTURE**: Currently Microsoft does not support the automated creation of a User Flow in a CIAM Tenant.  
     - They do however support a creation of a User Flow in a Workforce Tenant.  
