@@ -1,200 +1,122 @@
-# NewRepo#
-This is a newly created repository designed to deploy the needed components for the CIAM Demo solution.
-This code must be run via a Windows OS with Powershell 5.1 as it uses some Powershell scripts to perform certain tasks.
 
-Workforce Tenant and Subscription Deployment:
+# Woodgrove Infrastructure (CIAM Demo)
 
-***********************************************************************************************************************************************************************
-NOTE:
-This Terraform code will deploy the needed resources into a chosen Azure Workforce Tenant and subscription.
+End-to-end Terraform for a Woodgrove-style demo environment spanning **Azure CIAM (External ID) app registrations**, **Azure AD (workforce) integration**, **Key Vault + certs/secrets**, **Storage + SAS rotation**, **App Service (5 web apps)**, **API Management**, **Azure Communication Services (Email)**, **Application Insights**, and **Log Analytics**.
 
-    The Workforce tenant and subscription must already exist and be defined in the variables.tf file.
+> **Tenants:**
+> - **Workforce tenant & subscription** — hosts Azure resources (RG, KV, Storage, APIM, ACS, App Service, LA/AI).
+> - **CIAM tenant** — hosts app registrations (Primary, UserProfile API, Payment/API), SAML Bank enterprise app, permissions & pre-authorizations.
 
-    Note that a User or Application Registration running the Terraform code must have the needed permissions to create resources in the chosen Tenant and subscription and likewise be defined in the variables.tf file.
+## Architecture
+```mermaid
+flowchart LR
+  %% CIAM Tenant
+  subgraph CIAM_Tenant [CIAM Tenant]
+    AADP["Primary App Registration"]
+    AADU["UserProfile API App Registration"]
+    AADA["Payment/API App Registration"]
+    AADB["Bank SAML Enterprise App"]
+  end
 
-    All of the resources (below) will be deployed into a single resource group and Azure location.
-    All of the resources (below) are defined in the variables.tf file, or locals.tf 
-    (Most all of the vaules in locals.tf are derived from variables or resources created it is unlikely that you will need to modify this file.)
-***********************************************************************************************************************************************************************
-Resource Group
+  %% Workforce Tenant
+  subgraph Workforce_Tenant [Workforce Tenant]
+    RG["Resource Group"]
+    KV["Key Vault"]
+    SA["Storage Account: webappbackups, dataprotection-keys"]
+    LAW["Log Analytics"]
+    AI["Application Insights"]
+    ASP["App Service Plan"]
+    APIM["API Management"]
+    ACS["Communication Service + Email"]
+    W1["WebApp1 Demo"]
+    W2["WebApp2 Groceries API"]
+    W3["WebApp3 Middleware"]
+    W4["WebApp4 Auth API"]
+    W5["WebApp5 Bank"]
+  end
 
-    Storage Account with 2 containers
-        System Assigned Managed Identity
-        
-        Containers:
-            webappbackups - This is to be used for Web App backups
-            dataprotection-keys - This is to be used for storing public encryption keys needed for data protection and for sharing authentication cookies across multiple web apps.
-        
-        Access:
-            Rotating SAS token that is stored and updated to a keyvault secret.
-            NOTE: Permissions have been set in the Terraform code for the webapps to access this storage account via their managed identity.
+  %% Relationships
+  AADP -- "pre-authorized" --> AADU
+  AADP -- "pre-authorized" --> AADA
+  KV <-- "certs & secrets" --> AADP
+  KV <-- "certs & secrets" --> AADU
+  KV <-- "certs & secrets" --> AADA
+  W1 -- "MSI" --> KV
+  W2 -- "MSI" --> KV
+  W3 -- "MSI" --> KV
+  W4 -- "MSI" --> KV
+  W5 -- "MSI" --> KV
+  W1 -- "daily backups" --> SA
+  W2 -- "daily backups" --> SA
+  W3 -- "daily backups" --> SA
+  W4 -- "daily backups" --> SA
+  AI --> LAW
+  APIM --> W2
+  APIM --> W3
+  APIM --> W4 
+```
 
-    Key Vault:
-        System Assigned Managed Identity
-    
-        Permissions:
-            RBAC roles assigned to chosen Admins and Service Principals
-            Keyvault Policies created for sharing data with Azure Web Applications and Admin Users / Service Principals.  
+## What this deploys
+- **Resource Group** and region.
+- **Storage account** + containers (`webappbackups`, `dataprotection-keys`), **SAS generation** & **rotation** (via `time_rotating`) with the SAS stored in **Key Vault**.
+- **Key Vault** with **certificates** (Primary/Profile/App) and **secrets** (app client secrets; rotated SAS token). Access for admins, App Service RP, and each web app MI.
+- **App Service Plan** (Windows) and **five Web Apps** with Auth v2 plumbed (optional), .NET stack, AI/LAW instrumentation, and KV-based settings.
+- **ARM-based backup configuration** for each app (daily, 30-day retention) using the rotated SAS.
+- **APIM** with system-assigned identity and a placeholder API (replace with your own).
+- **Communication Services (Email)** with Azure-managed domain association.
+- **CIAM** app registrations & SAML enterprise app with pre-authorized scopes; secrets stored in KV; certs uploaded to CIAM via Az CLI.
 
-        Secrets:
-            A rotating secret that contains an SAS token for accessing the storage account and containers.
-            
-        Certificates:
-            Three Self-Signed Certificates are generated and stored in the Keyvault for authentication to the Application Registrations in the CIAM tenant.
-            The thumbprints for the 3 certificates are provided in the output.tf
+## Prerequisites
+- **Terraform** 1.5+ and Azure CLI.
+- Permissions:
+  - Workforce subscription: ability to create RG, KV, Storage, APIM, ACS, App Service, LAW/AI, role assignments.
+  - CIAM tenant: ability to create **app registrations**, service principals, permissions/pre-auth, and **add credentials**.
+- For cert upload: host running `az` with service principals for **both** tenants.
 
-    Log Analytics Workspace:
+## Configure providers
+`provider.tf` pins: `azurerm ~> 4.x`, `azuread >= 2.7`, and `random ~> 3.6`. Two Azure AD providers are configured: default points to **CIAM** (client credentials), alias `workforce` points to the **workforce** tenant. Update `variables.tf` (tenant/subscription/client IDs & secrets) and, preferably, source secrets from your CI/CD system.
 
-    Application Insights: for monitoring and diagnostics
-        Connected to all web apps for monitoring and diagnostics
-        Connected to the Log Analytics workspace for querying logs
+## Variables
+All variables live in `variables.tf`. Minimal overrides go in `terraform.tfvars` (or environment-specific tfvars). Key settings:
+- `ext_*` and `work_*` for tenant/subscription and identities.
+- `rg_*`, `kv_*`, `storage_*` for platform.
+- `asp_*`, `webapp*_name`, `.NET` version, and web auth knobs.
+- `rotation_interval_hours` for SAS rotation.
 
-    API Management Service: to manage and secure APIs
-        API Interface: for backend services
+## Quick start
+```bash
+# 1) Login to the workforce subscription
+az login
+az account set --subscription <WORK_SUBSCRIPTION_ID>
 
-    Communications Service: for SMS and Email capabilities
-        Email Communications Service: to send emails
-            Domain: for email sending
-            Needed Associations and DNS records are created and reported on the output file.
+# 2) Initialize and preview
+terraform init
+terraform plan -var-file="terraform.tfvars"
 
-    Application Service Plan: Used to host web applications
-        Web App1: for hosting the demo frontend
-            This webapp has a System Assigned Managed Identity used for Autehntication to Azure Resources
-            This webapp is connected to the Application Insights Object created above for monitoring and diagnostics
-            This webapp is connected to the Log Analytics workspace for querying logs
-            This webapp contains custom settings applied for the key vault secret needed for backups, and to certificates used to authenticate against the CIAM Tenant.
+# 3) Apply
+terraform apply -var-file="terraform.tfvars"
+```
+After apply, inspect `output.tf` values for app IDs, consent URLs, SAML info, and endpoints.
 
-            App Settings have been configured for CIAM Demo solution
-            App Settings have been configured to view and use the 3 Generated Certificates in the keyvault (above)
-            The Webapp authenticates to the Keyvault using it's managed identity
-            WebSite Backups are configured backup to the storage account using a rotating SAS key generated from the storage account and stored in a Key Vault secret.
-            This can be deployed from chosen GitHub repository and branch
-            
-            NOTE: The frontend web app is configured to use the same data protection keys as the other web apps to share authentication cookies.
+## Post-deploy steps
+- **APIM**: replace the Petstore OpenAPI with your API, add JWT validation policies against CIAM, and configure per-API settings.
+- **SAML (Bank)**: set **Entity ID** and **Reply URL** in the Enterprise App to match the WebApp5 URLs from outputs.
+- **User flows (CIAM)**: create sign-up/sign-in and profile edit flows (currently manual; see `scripts/userflow.ps1` for future automation).
 
-        Web App2: for hosting the Groceries api backend functions including sending and receiving SMS and Emails
-            This webapp has a System Assigned Managed Identity used for Autehntication to Azure Resources
-            This webapp is connected to the Application Insights Object created above for monitoring and diagnostics
-            This webapp is connected to the Log Analytics workspace for querying logs
-            This webapp contains custom settings applied for the key vault secret needed for backups, and to certificates used to authenticate against the CIAM Tenant.
+## Security notes
+- **Key Vault RBAC vs Access Policies**: the repo currently defines both. Choose one approach; if `kv_enable_rbac_authorization = true`, disable access policy resources via conditional `count`. If you prefer access policies, set RBAC to `false`.
+- **Secrets**: prefer **certificates** over client secrets for app creds. Where secrets are used, set short expiry and alerts.
+- **Identity in CI/CD**: use **federated OIDC** for GitHub/Azure DevOps instead of storing client secrets.
 
-            App Settings have been configured for CIAM Demo solution
-            App Settings have been configured to view and use the 3 Generated Certificates in the keyvault (above)
-            The Webapp authenticates to the Keyvault using it's managed identity
-            WebSite Backups are configured backup to the storage account using a rotating SAS key generated from the storage account and stored in a Key Vault secret.
-            This can be deployed from chosen GitHub repository and branch
-            
-            NOTE: The frontend web app is configured to use the same data protection keys as the other web apps to share authentication cookies.
+## Troubleshooting
+- If web apps can’t read certs, verify the **App Service RP** access policy in KV and the **WEBSITE_LOAD_CERTIFICATES** setting.
+- If backups fail, confirm the **SAS secret** in KV is valid and rotation logic ran; check Storage RBAC for each web app.
+- For CIAM cert upload, verify both tenant logins and `az ad app credential reset --cert` permissions.
 
-        Web App3: for hosting the demo Middleware functions including modifying a user profile and utilizes Microsoft Graph API in the background
-            This webapp has a System Assigned Managed Identity used for Autehntication to Azure Resources
-            This webapp is connected to the Application Insights Object created above for monitoring and diagnostics
-            This webapp is connected to the Log Analytics workspace for querying logs
-            This webapp contains custom settings applied for the key vault secret needed for backups, and to certificates used to authenticate against the CIAM Tenant.
+## Contributing
+PRs welcome. Run `terraform fmt` and ensure plans are clean. Keep provider versions pinned.
 
-            App Settings have been configured for CIAM Demo solution
-            App Settings have been configured to view and use the 3 Generated Certificates in the keyvault (above)
-            The Webapp authenticates to the Keyvault using it's managed identity
-            WebSite Backups are configured backup to the storage account using a rotating SAS key generated from the storage account and stored in a Key Vault secret.
-            This can be deployed from chosen GitHub repository and branch
-            
-            NOTE: The frontend web app is configured to use the same data protection keys as the other web apps to share authentication cookies.
+---
 
-
-        Web App4: for hosting the Application Settings needed to modify MFA and a Username
-            This webapp has a System Assigned Managed Identity used for Autehntication to Azure Resources
-            This webapp is connected to the Application Insights Object created above for monitoring and diagnostics
-            This webapp is connected to the Log Analytics workspace for querying logs
-            This webapp contains custom settings applied for the key vault secret needed for backups, and to certificates used to authenticate against the CIAM Tenant.
-
-            App Settings have been configured for CIAM Demo solution
-            App Settings have been configured to view and use the 3 Generated Certificates in the keyvault (above)
-            The Webapp authenticates to the Keyvault using it's managed identity
-            WebSite Backups are configured backup to the storage account using a rotating SAS key generated from the storage account and stored in a Key Vault secret.
-            This can be deployed from chosen GitHub repository and branch
-            
-            NOTE: The frontend web app is configured to use the same data protection keys as the other web apps to share authentication cookies.
-    
-        Web App5: for hosting the Bank demo using SAML authentication
-            This webapp has a System Assigned Managed Identity used for Autehntication to Azure Resources
-            This webapp is connected to the Application Insights Object created above for monitoring and diagnostics
-            This webapp is connected to the Log Analytics workspace for querying logs
-            This webapp contains custom settings applied for the key vault secret needed for backups, and to certificates used to authenticate against the CIAM Tenant.
-
-            App Settings have been configured for CIAM Demo solution
-            App Settings have been configured to view and use the 3 Generated Certificates in the keyvault (above)
-            The Webapp authenticates to the Keyvault using it's managed identity
-            WebSite Backups are configured backup to the storage account using a rotating SAS key generated from the storage account and stored in a Key Vault secret.
-            This can be deployed from chosen GitHub repository and branch
-
-CIAM Tenant Deployment:
-***********************************************************************************************************************************************************************
-NOTE:
-This Terraform code will deploy the needed resources into a chosen Azure CIAM Tenant.  Currently CIAM tenants do not support subscriptions.
-
-    The CIAM tenant must already exist and be defined in the variables.tf file.
-
-    *** A CIAM WorkFlow must also be setup and properly configured manually as it is not supported in Terraform, Powershell, or Python for CIAM****
-
-    Note that a User or Application Registration running the Terraform code must already exist and have the needed permissions to create resources in the chosen Tenant and likewise be defined in the variables.tf file.
-
-    All of the resources (below) will be deployed into the CIAM Tenant.
-    All of the resources (below) are defined in the variables.tf file, or locals.tf 
-    (Most all of the vaules in locals.tf are derived from variables or resources created it is unlikely that you will need to modify this file.)
-***********************************************************************************************************************************************************************
-
-    App Registrations:
-        Frontend App Registration: for the demo frontend web app (listed as Primary)
-            API Permissions configured for Microsoft Graph and CIAM
-            Redirect URIs configured for the demo frontend web app
-            Authentication configured for the demo frontend web app
-            Needed application roles created for application access
-            The needed Public Certificates for Web App Authentication is created and uploaded via this template
-            A secret is created and for this App Registration and stored in the Key Vault in the Workforce Tenant
-
-        Backend App Registration: for the demo api backend functions including sending and receiving SMS and Emails (Listed as AppReg)
-            API Permissions configured for Microsoft Graph and CIAM
-            Exposed API Created
-            Redirect URIs configured for the demo api backend functions web app
-            Authentication configured for the demo api backend functions web app
-            Permissions created for the Frontend App Registration to use the exposed API
-            A secret is created and for this App Registration and stored in the Key Vault in the Workforce Tenant
-
-        Middleware App Registration: for the demo Middleware functions including modifying a user profile using Microsoft Graph API (Listed as Profile_Mod)
-            API Permissions configured for Microsoft Graph and CIAM
-            Exposed API Created
-            Redirect URIs configured for the demo Middleware functions web app
-            Authentication configured for the demo Middleware functions web app
-            Permissions created for the Frontend App Registration to use the exposed API
-            A secret is created and for this App Registration and stored in the Key Vault in the Workforce Tenant
-
-        Bank Demo App Registration: for the Bank demo using SAML authentication
-            API Permissions configured for Microsoft Graph and CIAM
-            Redirect URIs configured for the Bank demo web app
-            Authentication configured for the Bank demo web app
-            SAML configuration for the Bank demo web app
-            The Service Principal for this app registration is configured as an enterprise application in the CIAM tenant with SAML enabled.
-            
-            NOTE: The Entity ID and Reply URL are not able to be set in Terraform and must be set manually after creation in the Enterprise Application (service principal) created for this app registration.
-            
-            The Entity ID and Reply URL must match the values configured in the Bank demo web app provided in the output of the Terraform code.
-
-    User Flows: 
-    (Currently User Flows must be created manually in the CIAM tenant as they are not yet supported in Terraform)
-    # I wrote a powershell to attempt to automate this process I later found that these commands are only available for a Workforce Tenant.#
-    # The powershell script is located in the scripts folder of this repository. and will perform the following tasks once Microsoft adds this functionality to CIAM Tenants.#
-        Sign Up and Sign In User Flow: for user registration and authentication in the demo solution
-            Configured to use email as an identity provider
-            Configured to use custom attributes needed for the demo solution
-
-        Profile Edit User Flow: for allowing users to edit their profile information in the demo solution
-            Configured to use custom attributes needed for the demo solution
-
-        Custom Attributes:
-            Custom attributes needed for the demo solution are created in the CIAM tenant.
-
-        Conditional Access Policies:
-            Conditional Access Policies needed for the demo solution are created in the CIAM tenant.
-
-
-
+### Appendix: Files
+See **CODEBASE-INVENTORY.md** for a full per-file description.
