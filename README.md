@@ -152,7 +152,7 @@ After apply, inspect the `output.tf` values for app IDs, consent URLs, SAML info
   - The **App Service RP** access policy in Key Vault includes `get` and `list` for certificates.
   - The **WEBSITE_LOAD_CERTIFICATES** setting is set to `*` or the thumbprint of the certificate.
   - the **WEBSITE_LOAD_USER_PROFILE** setting is set to `1`.
-- If a web application backup fails, 
+- If a web application backup fails:
   - Confirm the **SAS secret** in the Key Vault is valid
   - Confirm the logic deployed properly rotated the key
   - Also check the Storage RBAC permissions for each web app.
