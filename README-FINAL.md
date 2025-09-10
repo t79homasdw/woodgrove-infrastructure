@@ -10,37 +10,50 @@ End-to-end Terraform for a Woodgrove-style demo environment spanning **Azure CIA
 ## Architecture
 ```mermaid
 flowchart LR
-  subgraph CIAM Tenant
-    AADP[Primary App Reg]
-    AADU[UserProfile API App Reg]
-    AADA[Payment/API App Reg]
-    AADB[Bank SAML App]
+  %% CIAM Tenant
+  subgraph CIAM_Tenant [CIAM Tenant]
+    AADP["Primary App Registration"]
+    AADU["UserProfile API App Registration"]
+    AADA["Payment/API App Registration"]
+    AADB["Bank SAML Enterprise App"]
   end
 
-  subgraph Workforce Tenant
-    RG[Resource Group]
-    KV[(Key Vault)]
-    SA[(Storage Account)
-webappbackups / dataprotection-keys]
-    LAW[(Log Analytics)]
-    AI[(App Insights)]
-    ASP>App Service Plan]
-    APIM[[API Management]]
-    ACS[[Communication Service + Email]]
-    W1[WebApp1 Demo]
-    W2[WebApp2 Groceries API]
-    W3[WebApp3 Middleware]
-    W4[WebApp4 Auth API]
-    W5[WebApp5 Bank]
+  %% Workforce Tenant
+  subgraph Workforce_Tenant [Workforce Tenant]
+    RG["Resource Group"]
+    KV["Key Vault"]
+    SA["Storage Account: webappbackups, dataprotection-keys"]
+    LAW["Log Analytics"]
+    AI["Application Insights"]
+    ASP["App Service Plan"]
+    APIM["API Management"]
+    ACS["Communication Service + Email"]
+    W1["WebApp1 Demo"]
+    W2["WebApp2 Groceries API"]
+    W3["WebApp3 Middleware"]
+    W4["WebApp4 Auth API"]
+    W5["WebApp5 Bank"]
   end
 
-  AADP -->|pre-authorized| AADU
-  AADP -->|pre-authorized| AADA
-  KV <-->|certs & secrets| AADP & AADU & AADA
-  W1 & W2 & W3 & W4 & W5 -->|MSI| KV
-  W1 & W2 & W3 & W4 -->|daily backups| SA
+  %% Relationships
+  AADP -- "pre-authorized" --> AADU
+  AADP -- "pre-authorized" --> AADA
+  KV <-- "certs & secrets" --> AADP
+  KV <-- "certs & secrets" --> AADU
+  KV <-- "certs & secrets" --> AADA
+  W1 -- "MSI" --> KV
+  W2 -- "MSI" --> KV
+  W3 -- "MSI" --> KV
+  W4 -- "MSI" --> KV
+  W5 -- "MSI" --> KV
+  W1 -- "daily backups" --> SA
+  W2 -- "daily backups" --> SA
+  W3 -- "daily backups" --> SA
+  W4 -- "daily backups" --> SA
   AI --> LAW
-  APIM --> W2 & W3 & W4
+  APIM --> W2
+  APIM --> W3
+  APIM --> W4 
 ```
 
 ## What this deploys
