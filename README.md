@@ -56,7 +56,7 @@ flowchart LR
   - **Key Vault** with certificates and secrets:
     - **certificates**: Self-Signed Certificiates create for (Primary/Profile/App) 
     - Access for admins, 
-    - Access Azure Service (Requires Policy), 
+    - Access for Azure Bankend Service (Requires Policy)
     - Each web app has a menaged identity with access to read certs/secrets.
     - **Secrets Information**:
       - app client secrets
