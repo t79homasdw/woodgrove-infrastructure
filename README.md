@@ -49,14 +49,37 @@ flowchart LR
 - `The package requires **Two tenants**: workforce (Azure resources) and CIAM (app registrations, SAML app, permissions).`
 - `**All resources** (below) are created in a single region (default: US Central). Modify variables.tf to change.`
 
-- **Resource Group** - `woodgrove-demo-rg` (default; Modify `variables.tf` to change.).
-- **Storage account** + containers (`webappbackups`, `dataprotection-keys`), **SAS generation** & **rotation** (via `time_rotating`) with the SAS string stored in **Key Vault**.
-- **Key Vault** with **certificates** (Primary/Profile/App) and **secrets** (app client secrets; rotated SAS token). Access for admins, App Service RP, and each web app MI.
-- **App Service Plan** (Windows) and **five Web Apps** all plumbed with Auth v2 (optional) and configured with a Managed Service Identity (MSI), .NET stack 9, App Insights /Log Aanalytics, Key Vault permissions with access to stored secrets and certificates.
-- **ARM-based backup configuration** for each Web Application (daily, 30-day retention) using the rotated SAS string.
-- **APIM** with system-assigned identity and a placeholder API (replace with your own).
-- **Communication Services (Email)** with Azure-managed domain association.
-- **CIAM** app registrations & SAML enterprise app with pre-authorized scopes; secrets stored in KV; certs uploaded to CIAM via Az CLI.
+- **Workforce Resources** in a single Resource Group assigned to a single region:
+  - Default location: `centralus` (Modify `variables.tf` to change.).
+  - **Resource Group** - `woodgrove-demo-rg` (default; Modify `variables.tf` to change.).
+  - **Storage account** + containers (`webappbackups`, `dataprotection-keys`), **SAS generation** & **rotation** (via `time_rotating`) with the SAS string stored in **Key Vault**.
+  - **Key Vault** with + certificates and secrets:
+    - **certificates**: Self-Signed Certificiates create for (Primary/Profile/App) 
+    - Access for admins, 
+    - Access Azure Service (Requires Policy), 
+    - Each web app has a menaged identity with access to read certs/secrets.
+    - **Secrets Information**:
+      - app client secrets
+      - certificate securets (Base64 PFX)
+      - rotated SAS token - This token is rotated based on the `rotation_interval_hours` variable.
+  - **App Service Plan** (Windows) and **Five Windows Web Apps** 
+    - All are plumbed with Auth v2 (optional)
+    - Each WebApp is configured with a Managed Service Identity (MSI)
+    - Each WebApp is Using .NET stack 9
+    - Each WebApp is configured with App Insights and Log Aanalytics Workspace
+    - Key Vault policies are configured for Each Web App to access stored secrets and certificates via Key Vault Access Policies.
+  - **ARM-based backup configuration** for each Web Application (daily, 30-day retention) using the rotated SAS string.
+  - **APIM** with system-assigned identity and a placeholder API (replace with your own).
+  - **Communication Services (Email)** with Azure-managed domain association.
+
+- **CIAM Resources** 
+    - 3 Application registrations 
+        - Primary app (web + API; authN/authZ)
+        - Application API (protected API; authZ)
+        - UserProfile API (protected API; authZ)
+        - Each App Registration (above) has one secret stored in Workforce Keyvault
+        - Certificates are uploaded to CIAM via Azu CLI.
+    - 1 SAML enterprise app with pre-authorized scopes; 
 
 ## Prerequisites
 - **Terraform** 1.5+ and Azure CLI.
