@@ -17,19 +17,20 @@ flowchart LR
     AADB[Bank SAML App]
   end
   subgraph Workforce Tenant
-    RG[Resource Group]
-    KV[(Key Vault)]
+    KV[Key Vault: certs & secrets]
     SA[Storage Account: webappbackups, dataprotection-keys]
     LAW[(Log Analytics)]
     AI[(App Insights)]
+    subgraph ResourceGroup [Resource Group: woodgrove-demo-rg]
+        W1[WebApp1 Demo]
+        W2[WebApp2 Groceries API]
+        W3[WebApp3 Middleware]
+        W4[WebApp4 Auth API]
+        W5[WebApp5 Bank]
+    end
     ASP>App Service Plan]
     APIM[[API Management]]
     ACS[[Communication Service + Email]]
-    W1[WebApp1 Demo]
-    W2[WebApp2 Groceries API]
-    W3[WebApp3 Middleware]
-    W4[WebApp4 Auth API]
-    W5[WebApp5 Bank]
   end
   AADP -->|pre-authorized| AADU
   AADP -->|pre-authorized| AADA
@@ -37,8 +38,8 @@ flowchart LR
   W1 & W2 & W3 & W4 & W5 -->|MSI| KV
   W1 & W2 & W3 & W4 & W5 -->|daily backups| SA
   AI --> LAW
-  ASP --> W1 & W2 & W3 & W4 & W5
-  APIM --> W2 & W3 & W4 
+  ASP -->|Hardware| W1 & W2 & W3 & W4 & W5
+  APIM -->|API| W2 & W3 & W4 
 ```
 
 ## What this deploys
