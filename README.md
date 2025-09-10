@@ -78,7 +78,7 @@ flowchart LR
         - Application API (protected API; authZ)
         - UserProfile API (protected API; authZ)
         - Each App Registration (above) has one secret stored in Workforce Keyvault
-        - Certificates are uploaded to CIAM via Azu CLI.
+        - Public Certificates (generated from the self signed certificates) are uploaded to CIAM App Registrations via Az CLI.
     - 1 SAML enterprise app with pre-authorized scopes; 
 
 ## Prerequisites
