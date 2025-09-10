@@ -1,6 +1,6 @@
-#-------------------------------------------------
-# Keyvault Creation - Default is "true"
-#-------------------------------------------------
+###############################################################################
+# Key Vault and Secret for Storing Rotated SAS Token
+###############################################################################
 resource "azurerm_key_vault" "main" {
   name                      = lower("kv-${var.kv_name}")
   location                  = local.location
@@ -18,42 +18,45 @@ resource "azurerm_key_vault" "main" {
   }
 }
 
-resource "azurerm_role_assignment" "webapp_kv_access_admin" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Administrator"
-  principal_id         = data.azuread_user.kv_admin.object_id
-  depends_on           = [azurerm_key_vault.main]
+
+###############################################################################
+# Rotation trigger (every N hours)
+###############################################################################
+
+resource "time_rotating" "rotation_trigger" {
+  rotation_hours = var.rotation_interval_hours
 }
 
-resource "azurerm_role_assignment" "webapp_kv_access_admin2" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Administrator"
-  principal_id         = "11111111-1111-1111-1111-111111111111" # Replace with actual Object ID of the application registration not client ID
-  depends_on           = [azurerm_key_vault.main]
-}
+###############################################################################
+# Store SAS token in Key Vault
+###############################################################################
 
-resource "azurerm_role_assignment" "webapp_kv_access_owner" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Owner"
-  principal_id         = data.azuread_user.kv_admin.object_id
-  depends_on           = [azurerm_key_vault.main]
-}
+resource "azurerm_key_vault_secret" "bkup_sas_token" {
+  name            = var.kv_secret_name
+  value           = data.azurerm_storage_account_sas.backup.sas
+  key_vault_id    = azurerm_key_vault.main.id
+  content_type    = "application/x-sas-token"
+  expiration_date = local.sas_expiry
 
-resource "azurerm_role_assignment" "webapp_kv_access_owner2" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Owner"
-  principal_id         = "11111111-1111-1111-1111-111111111111" # Replace with actual Object ID of the application registration not client ID
-  depends_on           = [azurerm_key_vault.main]
-}
+  tags = {
+    rotated_on = timestamp()
+  }
 
-module "sas_token_rotation" {
-  source                  = "./modules/secret_rotation"
-  key_vault_id            = azurerm_key_vault.main.id
-  secret_name             = var.kv_secret_name
-  rotation_interval_hours = 720 # Rotate every 30 days
+  lifecycle {
+    replace_triggered_by = [time_rotating.rotation_trigger]
+    ignore_changes       = [tags]
+  }
+
   depends_on = [
     azurerm_key_vault.main,
-    azurerm_role_assignment.webapp_kv_access_admin2
+    azurerm_key_vault_access_policy.webapp_kv_access_admin2,
+    data.azurerm_storage_account_sas.backup
   ]
 }
 
+resource "null_resource" "Notify_Key_Update" {
+  provisioner "local-exec" {
+    command = "echo 'Secret rotated at ${time_rotating.rotation_trigger.id}'"
+  }
+  depends_on = [azurerm_key_vault_secret.bkup_sas_token]
+}

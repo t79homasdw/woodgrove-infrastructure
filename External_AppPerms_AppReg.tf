@@ -14,6 +14,7 @@ resource "azuread_application" "app_perms" {
   required_resource_access {
     resource_app_id = data.azuread_service_principal.msgraph_app_perms.client_id
 
+    # Delegate permissions (scopes)
     dynamic "resource_access" {
       for_each = toset(local.existing_roles_app)
       content {
@@ -96,6 +97,7 @@ resource "azuread_application_permission_scope" "user_mfa" {
 ############################################
 # Attach Certificate
 ############################################
+# This terraform code is not yet supported for CIAM tenants
 #resource "azuread_application_certificate" "app_perms_cert" {
 #  application_id = azuread_application.app_perms.id
 #  type           = "AsymmetricX509Cert"
@@ -114,7 +116,7 @@ resource "azuread_service_principal" "app_perms" {
 }
 
 ############################################
-# Allow Primary App access to exposed scopes
+# Allow Primary App to access exposed scopes
 ############################################
 resource "azuread_application_pre_authorized" "authorize_app_perms" {
   application_id       = azuread_application.app_perms.id
@@ -131,4 +133,14 @@ resource "azuread_application_pre_authorized" "authorize_app_perms" {
     azuread_application.app_perms,
     azuread_application.primary
   ]
+}
+
+#############################################
+# Client Secret for the app
+#############################################
+resource "azuread_application_password" "app_perms_secret" {
+  application_id = "/applications/${azuread_application.app_perms.object_id}"
+  display_name   = var.appreg_appsec
+  end_date       = local.sas_expiry
+  depends_on     = [azuread_application.app_perms]
 }

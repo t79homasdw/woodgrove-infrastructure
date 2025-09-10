@@ -1,6 +1,6 @@
-############################################
-# Profile App Registration - User Perms
-############################################
+#########################################################################
+# Profile Application Registration - User Perms Delegated Permissions
+#########################################################################
 resource "azuread_application" "profile_mod" {
   display_name     = var.appreg_userprofile
   sign_in_audience = "AzureADMyOrg"
@@ -15,6 +15,7 @@ resource "azuread_application" "profile_mod" {
   required_resource_access {
     resource_app_id = data.azuread_service_principal.msgraph_profile_mod.client_id
 
+    # Delegated permissions (scopes)
     dynamic "resource_access" {
       for_each = toset(local.existing_scopes_userprofile)
       content {
@@ -75,6 +76,7 @@ resource "random_uuid" "account_readwrite" {}
 ############################################
 # Attach Certificate
 ############################################
+# This terraform code is not yet supported for CIAM tenants
 #resource "azuread_application_certificate" "profile_mod_cert" {
 #  application_id = azuread_application.profile_mod.id
 #  type           = "AsymmetricX509Cert"
@@ -106,4 +108,14 @@ resource "azuread_application_pre_authorized" "authorize_profile_mod" {
     azuread_application.profile_mod,
     azuread_application.primary
   ]
+}
+
+#############################################
+# Client Secret for the app
+#############################################
+resource "azuread_application_password" "profile_mod_secret" {
+  application_id = "/applications/${azuread_application.profile_mod.object_id}"
+  display_name   = var.appreg_userprofilesec
+  end_date       = local.sas_expiry
+  depends_on     = [azuread_application.profile_mod]
 }

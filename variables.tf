@@ -21,6 +21,97 @@ variable "global_tags" {
 }
 
 #---------------------------------------------------------------------------------
+#These are variables that apply to individual certificates created in the Workforce Tenant
+#---------------------------------------------------------------------------------
+
+variable "cert_name1" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "svc-primary-cert"
+}
+
+variable "cert_name2" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "svc-profile-cert"
+}
+
+variable "cert_name3" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "svc-app-cert"
+}
+
+#---------------------------------------------------------------------------------
+#These are variables that apply to all certificates created in the Workforce Tenant
+#---------------------------------------------------------------------------------
+
+variable "cert_issuer_type" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "Self"
+}
+
+variable "cert_exportable_key" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = true
+}
+variable "cert_key_size" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "2048"
+}
+
+variable "cert_key_type" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "RSA"
+}
+
+variable "cert_reuse_key" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = true
+}
+
+variable "cert_cert_lifetimeaction" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "AutoRenew"
+}
+
+variable "cert_daysbeforeexpiry" {
+  description = "Type of Certificate to use"
+  type        = number
+  default     = 30
+}
+
+variable "cert_content_type" {
+  description = "Type of Certificate to use"
+  type        = string
+  default     = "application/x-pkcs12"
+}
+
+variable "cert_validity_in_months" {
+  description = "Type of Certificate to use"
+  type        = number
+  default     = 12
+}
+
+variable "cert_extended_key_usage" {
+  description = "Type of Certificate to use"
+  type        = list(string)
+  default     = ["1.3.6.1.5.5.7.3.1"]
+}
+
+variable "cert_key_usage" {
+  description = "Type of Certificate to use"
+  type        = list(string)
+  default     = ["digitalSignature", "keyEncipherment"]
+}
+
+#---------------------------------------------------------------------------------
 #These are variables that apply to app registrations the External Tenant
 #---------------------------------------------------------------------------------
 
@@ -90,6 +181,19 @@ variable "work_sub_id" {
   type        = string
   default     = "11111111-1111-1111-1111-111111111111"
 }
+
+variable "work_client_id" {
+  description = "External Client ID"
+  type        = string
+  default     = "11111111-1111-1111-1111-111111111111"
+}
+
+variable "work_client_secret" {
+  description = "External Client Secret"
+  type        = string
+  default     = "*************************************"
+}
+
 variable "work_alias" {
   description = "Workforce Azure AD Alias"
   type        = string
@@ -226,14 +330,29 @@ variable "appreg_primaryapp" {
   default     = "<DEMO-NAME>-Primary-AppReg"
 }
 
+variable "appreg_primarysec" {
+  description = "Specifies the Name of an Application Registration that the site can use for Azure API Calls"
+  default     = "<DEMO-NAME>-Primary-Secret"
+}
+
 variable "appreg_userprofile" {
   description = "Specifies the Name of an Application Registration that the site can use for Azure API Calls"
   default     = "<DEMO-NAME>-UserProfile-AppReg"
 }
 
+variable "appreg_userprofilesec" {
+  description = "Specifies the Name of an Application Registration that the site can use for Azure API Calls"
+  default     = "<DEMO-NAME>-UserProfile-Secret"
+}
+
 variable "appreg_appperms" {
   description = "Specifies the Name of an Application Registration that the site can use for Azure API Calls"
   default     = "<DEMO-NAME>-AppPerms-AppReg"
+}
+
+variable "appreg_appsec" {
+  description = "Specifies the Name of an Application Registration that the site can use for Azure API Calls"
+  default     = "<DEMO-NAME>-AppPerms-Secret"
 }
 
 variable "appreg_bankdemo" {
@@ -423,6 +542,10 @@ variable "WEBSITE_LOAD_CERTIFICATES" {
   description = "This adds a custom setting that allows the site to use loaded certificates."
   default     = "*"
 }
+variable "WEBSITE_LOAD_USER_PROFILE" {
+  description = "This adds a custom setting that allows the site to use loaded certificates."
+  default     = "1"
+}
 
 #---------------------------------------------------------------------------------
 # These are custom names for the web applications and are unique to each site.
@@ -469,4 +592,9 @@ variable "sas_expiry_fixed" {
   type = string
   # Keep far enough in the future while you iterate
   default = "2026-09-01T00:00:00Z"
+}
+
+variable "rotation_interval_hours" {
+  type    = number
+  default = 720 # 30 days
 }

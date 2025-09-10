@@ -29,6 +29,11 @@ resource "azurerm_email_communication_service_domain" "azure_managed" {
   domain_management = "AzureManaged" # Azure provides and manages the sending domain
   # Optional: enable engagement tracking
   # user_engagement_tracking_enabled = true
+  lifecycle {
+    ignore_changes = [
+      tags
+    ]
+  }
   depends_on = [
     azurerm_communication_service.com-service,
     azurerm_email_communication_service.email

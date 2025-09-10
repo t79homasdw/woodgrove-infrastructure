@@ -61,6 +61,12 @@ output "e1_____Storage_Account" { value = local.storage_name }
 output "e2_____Keyvault" { value = lower("kv-${var.kv_name}") }
 output "e3_____acs_hostname" { value = azurerm_communication_service.com-service.hostname }
 output "e4_____email_sender_domain" { value = azurerm_email_communication_service_domain.azure_managed.from_sender_domain }
+
 output "f0" { value = "--------------------------------------------------------------------------------" }
+output "f1_____App_Cert_Primary" { value = azurerm_app_service_certificate.primary_cert.thumbprint }
+output "f2_____App_Cert_Profile" { value = azurerm_app_service_certificate.profile_cert.thumbprint }
+output "f2_____App_Cert_App" { value = azurerm_app_service_certificate.app_cert.thumbprint }
+
+output "g0" { value = "--------------------------------------------------------------------------------" }
 
 #output "e2_app_insights_connection_string" { value = azurerm_application_insights.appinsights.connection_string }

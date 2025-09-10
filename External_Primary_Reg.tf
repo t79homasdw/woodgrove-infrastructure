@@ -4,6 +4,9 @@
 resource "azuread_application" "primary" {
   display_name = var.appreg_primaryapp
 
+############################################
+# App Roles for the application
+############################################
   app_role {
     allowed_member_types = ["User", "Application"]
     description          = "Allows users to process orders"
@@ -31,6 +34,9 @@ resource "azuread_application" "primary" {
     value                = "ExclusiveDemosSecurityGroup"
   }
 
+############################################
+# Sign-in audience
+############################################
   web {
     redirect_uris = [local.appreg_redirect, local.appreg_redirect1]
     implicit_grant {
@@ -38,6 +44,9 @@ resource "azuread_application" "primary" {
       id_token_issuance_enabled     = true
     }
   }
+############################################
+# API Permissions
+############################################
   api {
     requested_access_token_version = 2
     mapped_claims_enabled          = true
@@ -62,6 +71,11 @@ resource "azuread_application" "primary" {
       }
     }
   }
+  
+############################################
+# Exposed API Scope Permissions
+############################################
+  # User profile read and write permissions
   required_resource_access {
     resource_app_id = azuread_application.profile_mod.client_id
     resource_access {
@@ -73,6 +87,7 @@ resource "azuread_application" "primary" {
       type = "Scope"
     }
   }
+  # Payment read, write, and MFA permissions
   required_resource_access {
     resource_app_id = azuread_application.app_perms.client_id
     resource_access {
@@ -115,6 +130,7 @@ resource "random_uuid" "ExclusiveDemos_SecurityGroup" {}
 ############################################
 # Attach Certificate
 ############################################
+# This terraform code is not yet supported for CIAM tenants
 #resource "azuread_application_certificate" "primary_cert" {
 #  application_id = azuread_application.primary.id
 #  type           = "AsymmetricX509Cert"
@@ -130,4 +146,14 @@ resource "random_uuid" "ExclusiveDemos_SecurityGroup" {}
 resource "azuread_service_principal" "primary_sp" {
   client_id  = azuread_application.primary.client_id
   depends_on = [azuread_application.primary]
+}
+
+#############################################
+# Client Secret for the app
+#############################################
+resource "azuread_application_password" "primary_secret" {
+  application_id = "/applications/${azuread_application.primary.object_id}"
+  display_name   = var.appreg_primarysec
+  end_date       = local.sas_expiry
+  depends_on     = [azuread_application.primary]
 }

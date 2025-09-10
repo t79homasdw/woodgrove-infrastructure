@@ -30,6 +30,7 @@ data "azurerm_storage_account_sas" "backup" {
   depends_on = [
     azurerm_key_vault.main,
     azurerm_storage_account.backup,
-    azurerm_storage_container.backup
+    azurerm_storage_container.backup,
+    time_rotating.rotation_trigger
   ]
 }

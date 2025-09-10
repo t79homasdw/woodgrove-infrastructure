@@ -36,6 +36,7 @@ resource "azuread_application" "bank_demo" {
 ############################################
 # Attach Certificate
 ############################################
+# This terraform code is not yet supported for CIAM tenants
 #resource "azuread_application_certificate" "primary_cert" {
 #  application_id = azuread_application.primary.id
 #  type           = "AsymmetricX509Cert"
@@ -66,7 +67,9 @@ resource "azuread_service_principal" "bank_sp" {
   ]
 }
 
-
+############################################
+# Creates Certificate for the Enterprise app
+############################################
 resource "azuread_service_principal_token_signing_certificate" "saml_cert" {
   service_principal_id = azuread_service_principal.bank_sp.id
   display_name         = "CN=${var.appreg_bankdemo}-SAML"

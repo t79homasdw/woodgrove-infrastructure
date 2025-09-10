@@ -16,8 +16,23 @@ locals {
   allowed_issuer          = "https://${var.ext_tenant_id}.ciamlogin.com/${var.ext_tenant_id}/"
   federation_metadata_url = "https://${local.ciamlogin_domain}/${var.ext_tenant_id}/federationmetadata/2007-06/federationmetadata.xml?${azuread_application.bank_demo.client_id}"
 
-  sas_start  = var.freeze_sas ? var.sas_start_fixed : timestamp()
-  sas_expiry = var.freeze_sas ? var.sas_expiry_fixed : timeadd(timestamp(), "8760h")
+  cert_subject_name1 = "CN=api://${local.onmicrosoft_domain}/primary-api"
+  cert_subject_name2 = "CN=api://${local.onmicrosoft_domain}/profile-api"
+  cert_subject_name3 = "CN=api://${local.onmicrosoft_domain}/payment-api"
+
+  cert_san1 = azuread_application.primary.client_id
+  cert_san2 = azuread_application.profile_mod.client_id
+  cert_san3 = azuread_application.app_perms.client_id
+  cert_san4 = local.onmicrosoft_domain
+
+  # These locals will re-evaluate when sas_rotation.id changes
+  sas_start  = formatdate("YYYY-MM-DD'T'hh:mm:ss'Z'", timestamp())
+  sas_expiry = formatdate("YYYY-MM-DD'T'hh:mm:ss'Z'", timeadd(timestamp(), "${var.rotation_interval_hours}h"))
+
+  #sas_start              = var.freeze_sas ? var.sas_start_fixed : timestamp() # frozen for testing
+  #sas_expiry             = var.freeze_sas ? var.sas_expiry_fixed : timeadd(timestamp(), "8760h") # frozen for testing
+  container_url_with_sas = "${azurerm_storage_account.backup.primary_blob_endpoint}${azurerm_storage_container.backup.name}?${data.azurerm_storage_account_sas.backup.sas}"
+
 
   #################################################################################
   # Capture Domain for Azure CIAM Tenant
