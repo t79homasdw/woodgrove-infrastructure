@@ -20,17 +20,18 @@ flowchart LR
     KV[Key Vault: certs & secrets]
     SA[Storage Account: webappbackups, dataprotection-keys]
     LAW[(Log Analytics)]
-    AI[(App Insights)]
     subgraph ResourceGroup [Resource Group: woodgrove-demo-rg]
         W1[WebApp1 Demo]
         W2[WebApp2 Groceries API]
         W3[WebApp3 Middleware]
         W4[WebApp4 Auth API]
         W5[WebApp5 Bank]
+        AI[(App Insights)]
     end
     ASP>App Service Plan]
     APIM[[API Management]]
     ACS[[Communication Service + Email]]
+    DM[Azure Domain]
   end
   AADP -->|pre-authorized| AADU
   AADP -->|pre-authorized| AADA
@@ -40,6 +41,7 @@ flowchart LR
   AI --> LAW
   ASP -->|Hardware| W1 & W2 & W3 & W4 & W5
   APIM -->|API| W2 & W3 & W4 
+  ACS -->|Email| DM
 ```
 
 ## What this deploys
@@ -90,12 +92,13 @@ After apply, inspect `output.tf` values for app IDs, consent URLs, SAML info, an
 - **User flows (CIAM)**: create sign-up/sign-in and profile edit flows (currently manual; see `scripts/userflow.ps1` for future automation).
 
 ## Security notes
-- **Key Vault RBAC vs Access Policies**: the repo currently defines both. Choose one approach; if `kv_enable_rbac_authorization = true`, disable access policy resources via conditional `count`. If you prefer access policies, set RBAC to `false`.
+- **Key Vault RBAC vs Access Policies**: the repo currently defines both. Choose one approach; if `kv_enable_rbac_authorization = true`, this will disable access policy resources via conditional `count`. If you prefer access policies, set RBAC to `false` you will be able to use both.
+- **To Deploy Certs this setting is required `kv_enable_rbac_authorization = false` currently Microsoft only supports adding certs via access policies when automating the process of creating certificates. If you want to use RBAC only, you must upload certs manually.
 - **Secrets**: prefer **certificates** over client secrets for app creds. Where secrets are used, set short expiry and alerts.
 - **Identity in CI/CD**: use **federated OIDC** for GitHub/Azure DevOps instead of storing client secrets.
 
 ## Troubleshooting
-- If web apps can’t read certs, verify the **App Service RP** access policy in KV and the **WEBSITE_LOAD_CERTIFICATES** setting.
+- If web apps can’t read certs, verify the **App Service RP** access policy in KV and the **WEBSITE_LOAD_CERTIFICATES** and the **WEBSITE_LOAD_USER_PROFILE** setting.
 - If backups fail, confirm the **SAS secret** in KV is valid and rotation logic ran; check Storage RBAC for each web app.
 - For CIAM cert upload, verify both tenant logins and `az ad app credential reset --cert` permissions.
 
