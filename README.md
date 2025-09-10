@@ -45,9 +45,9 @@ flowchart LR
 ```
 
 ## What this deploys
-- `**NOTE** : this is a demo environment. Do not use in production without reviewing and adjusting settings (SKU, scaling, security, networking, etc).`
-- `The package requires **Two tenants**: workforce (Azure resources) and CIAM (app registrations, SAML app, permissions).`
-- `**All resources** (below) are created in a single region (default: US Central). Modify variables.tf to change.`
+`**NOTE** : this is a demo environment. Do not use in production without reviewing and adjusting settings (SKU, scaling, security, networking, etc).`
+`The package requires **Two tenants**: workforce (Azure resources) and CIAM (app registrations, SAML app, permissions).`
+`**All resources** (below) are created in a single region (default: US Central). Modify variables.tf to change.`
 
 - **Workforce Resources** in a single Resource Group assigned to a single region:
   - Default location: `centralus` (Modify `variables.tf` to change.).
