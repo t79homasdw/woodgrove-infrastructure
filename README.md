@@ -100,8 +100,11 @@ After apply, inspect the `output.tf` values for app IDs, consent URLs, SAML info
 ## Post-deploy steps
 - **APIM**: replace the Petstore OpenAPI with your API, add JWT validation policies against CIAM, and configure per-API settings.
 - **SAML (Bank)**: set **Entity ID** and **Reply URL** in the Enterprise App to match the WebApp5 URLs from outputs.
-- **Authorize APIS**: in CIAM, authorize the Primary app, UserProfile app and the Application app(s) for GraphAPI Permissions.  **Note**: The permissions are added in Terraform but still require admin consent.  **IMPORTANT**: Use both URLS from outputs to complete this step and modify the scopes as needed.
-- **User flows (CIAM)**: create sign-up/sign-in and profile manually and add the created Applications to it.  **FUTURE**: Currently Microsoft does not support the automated creation of a User Flow in a CIAM Tenant.  They do however support a creation of a User Flow in a Workforce Tenant.  I wrote the following powershell to create / edit the a user flow(s) once supported by Microsoft. (see `scripts/userflow.ps1` for future automation).
+- **Authorize API(s)**: in CIAM, authorize the Primary app, UserProfile app and the Application app(s) for GraphAPI Permissions.  **Note**: The permissions are added in Terraform but still require admin consent.  **IMPORTANT**: Use both URLS from outputs to complete this step and modify the scopes as needed.
+- **User flows (CIAM)**: create sign-up/sign-in and profile manually and add the created Applications to it.  
+  - **FUTURE**: Currently Microsoft does not support the automated creation of a User Flow in a CIAM Tenant.  
+    - They do however support a creation of a User Flow in a Workforce Tenant.  
+    - I wrote the following powershell to create / edit the a user flow(s) once supported by Microsoft. (see `scripts/userflow.ps1` for future automation).
 - Configure the Application Settings in each Web App as needed (some are pre-configured).
     - Source Code for 3Cloud CIAM Demo: https://github.com/t79homasdw/woodgrove
     - Source Code for Groceries API: https://github.com/t79homasdw/groceries-auth
@@ -110,9 +113,12 @@ After apply, inspect the `output.tf` values for app IDs, consent URLs, SAML info
     - Source Code for 3Cloud Bank: https://github.com/t79homasdw/woodgrove-bank
 
 ## Security notes
-- **Key Vault RBAC vs Access Policies**: the repo currently defines both. Choose one approach; if `kv_enable_rbac_authorization = true`, this will disable access policy resources via conditional `count`. If you prefer access policies, set RBAC to `false` you will be able to use both.
-- **To Automate Deploying Certificates** this setting is required `kv_enable_rbac_authorization = false` currently Microsoft only supports adding certs via Key Vault access policies for the process of creating and sharing certificates. If you want to use RBAC only, you must upload certs manually.
-- **Secrets**: prefer **certificates** over client secrets for app creds. Where secrets are used, set short expiry and alerts.
+- **Key Vault RBAC vs Access Policies**: The repo defines both policies and RBAC permissions. 
+  - **NOTE** if `kv_enable_rbac_authorization = true`, this will disable access policy resources via conditional `count`. 
+  - If you prefer access policies, set RBAC to `false` you will be able to use both.
+  - **To Automate Deploying Certificates** this setting is required `kv_enable_rbac_authorization = false` currently Microsoft only supports adding certs via Key Vault access policies for the process of creating and sharing certificates. If you want to use RBAC only, you must upload certs manually.
+- **Secrets**: 3Cloud prefers to use **certificates** over client secrets for app creds. 
+  - Where secrets are used, set short expiry and alerts.
 - **Identity in CI/CD**: use **federated OIDC** for GitHub/Azure DevOps instead of storing client secrets.
 
 ## Troubleshooting
@@ -121,12 +127,13 @@ After apply, inspect the `output.tf` values for app IDs, consent URLs, SAML info
   - The **WEBSITE_LOAD_CERTIFICATES** setting is set to `*` or the thumbprint of the certificate.
   - the **WEBSITE_LOAD_USER_PROFILE** setting is set to `1`.
 - If a web application backup fails, 
-  - Confirm the **SAS secret** in KV is valid
-  - Confirm the logic rotated the key
+  - Confirm the **SAS secret** in the Key Vault is valid
+  - Confirm the logic deployed properly rotated the key
   - Also check the Storage RBAC permissions for each web app.
-- For CIAM cert upload, 
+- For CIAM certificate uploads
   - verify both tenant logins and `az ad app credential reset --cert` permissions.  
-  - **Note**: this requires a Windows host with PowerShell 5.1.  (Linux, MacOS, and Powershell 6.x and higher are not supported for this step.)
+    - **Note**: this requires a Windows host with PowerShell 5.1.  
+    - Linux, MacOS, and Powershell 6.x and higher are not supported for this step.
  
 ## Contributing
 - PRs welcome
