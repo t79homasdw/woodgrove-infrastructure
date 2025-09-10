@@ -45,10 +45,11 @@ flowchart LR
 ```
 
 ## What this deploys
-- **NOTE** : this is a demo environment. Do not use in production without reviewing and adjusting settings (SKU, scaling, security, networking, etc).
-- **Two tenants**: workforce (Azure resources) and CIAM (app registrations, SAML app, permissions).
-- **All resources** (below) are created in a single region (default: `US Central`). Modify `variables.tf` to change.
-- **Resource Group**
+- `**NOTE** : this is a demo environment. Do not use in production without reviewing and adjusting settings (SKU, scaling, security, networking, etc).`
+- `The package requires **Two tenants**: workforce (Azure resources) and CIAM (app registrations, SAML app, permissions).`
+- `**All resources** (below) are created in a single region (default: `US Central`). Modify `variables.tf` to change.`
+
+- **Resource Group** - `woodgrove-demo-rg` (default; Modify `variables.tf` to change.).
 - **Storage account** + containers (`webappbackups`, `dataprotection-keys`), **SAS generation** & **rotation** (via `time_rotating`) with the SAS string stored in **Key Vault**.
 - **Key Vault** with **certificates** (Primary/Profile/App) and **secrets** (app client secrets; rotated SAS token). Access for admins, App Service RP, and each web app MI.
 - **App Service Plan** (Windows) and **five Web Apps** all plumbed with Auth v2 (optional) and configured with a Managed Service Identity (MSI), .NET stack 9, App Insights /Log Aanalytics, Key Vault permissions with access to stored secrets and certificates.
