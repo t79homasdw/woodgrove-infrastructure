@@ -35,8 +35,9 @@ flowchart LR
   AADP -->|pre-authorized| AADA
   KV <-->|certs & secrets| AADP & AADU & AADA
   W1 & W2 & W3 & W4 & W5 -->|MSI| KV
-  W1 & W2 & W3 & W4 -->|daily backups| SA
+  W1 & W2 & W3 & W4 & W5 -->|daily backups| SA
   AI --> LAW
+  ASP --> W1 & W2 & W3 & W4 & W5
   APIM --> W2 & W3 & W4 
 ```
 
