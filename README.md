@@ -53,7 +53,7 @@ flowchart LR
   - Default location: `centralus` (Modify `variables.tf` to change.).
   - **Resource Group** - `woodgrove-demo-rg` (default; Modify `variables.tf` to change.).
   - **Storage account** + containers (`webappbackups`, `dataprotection-keys`), **SAS generation** & **rotation** (via `time_rotating`) with the SAS string stored in **Key Vault**.
-  - **Key Vault** with + certificates and secrets:
+  - **Key Vault** with certificates and secrets:
     - **certificates**: Self-Signed Certificiates create for (Primary/Profile/App) 
     - Access for admins, 
     - Access Azure Service (Requires Policy), 
