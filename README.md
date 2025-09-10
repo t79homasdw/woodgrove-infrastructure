@@ -88,7 +88,7 @@ flowchart LR
 - Permissions:
   - Workforce subscription: ability to create RG, KV, Storage, APIM, ACS, App Service, LAW/AI, and role assignments.
   - CIAM tenant: ability to create **app registrations**, service principals, permissions/pre-auth, and **add credentials**.
-- For cert upload: host running `az` with service principals for **both** tenants.
+- For cert upload: host running `az` with service principals for **both** tenants (CIAM and WORKFORCE).
 
 ## Configure providers
 `provider.tf` pins: `azurerm ~> 4.x`, `azuread >= 2.7`, and `random ~> 3.6`. Two Azure AD providers are configured: default points to **CIAM** (client credentials), alias `workforce` points to the **workforce** tenant. Update `variables.tf` (tenant/subscription/client IDs & secrets) and, preferably, source secrets from your CI/CD system.
