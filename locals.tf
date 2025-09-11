@@ -13,7 +13,7 @@ locals {
   appreg_redirect1        = "https://jwt.ms/"
   appreg_redirect2        = "https://${azurerm_windows_web_app.webapp5.default_hostname}/Auth/AssertionConsumerService"
   sso_destination         = "https://${local.ciamlogin_domain}/${var.ext_tenant_id}/saml2"
-  allowed_issuer          = "https://${var.ext_tenant_id}.ciamlogin.com/${var.ext_tenant_id}/"
+  allowed_issuer          = "https://${var.ext_tenant_id}.ciamlogin.com/${var.ext_tenant_id}/v2.0"
   federation_metadata_url = "https://${local.ciamlogin_domain}/${var.ext_tenant_id}/federationmetadata/2007-06/federationmetadata.xml?${azuread_application.bank_demo.client_id}"
 
   cert_subject_name1 = "CN=api://${local.onmicrosoft_domain}/primary-api"
